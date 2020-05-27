@@ -36,7 +36,7 @@
 
 - name: Build challenge
   shell: |
-    clang "{{ challenge_name }}.c" -o "{{ challenge_name }}" -ggdb3 -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wimplicit-function-declaration -fno-pic -no-pie -Wl,-z,relro,-z,now,-z,-noexecstack
+    clang "{{ challenge_name }}.c" -o "{{ challenge_name }}" -ggdb3 -D_FORTIFY_SOURCE=2 -fstack-protector-all -Wimplicit-function-declaration -fno-pic -nopie -Wl,-z,relro,-z,now,-z,-noexecstack
     chown "{{ flag_user }}":"{{ ctf_group }}" "{{ challenge_name }}"
     chmod 4750 "{{ challenge_name }}"
   args:
