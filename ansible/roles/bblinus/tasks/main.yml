@@ -1,0 +1,67 @@
+---
+- name: Create challenge group
+  group:
+    name: "{{ flag_group }}"
+    state: present
+
+- name: Create flag user
+  user:
+    name: "{{ flag_user }}"
+    group: "{{ flag_group }}"
+    create_home: False
+
+- name: Create challenge directory
+  file:
+    path: "{{ challenges_root_path }}/{{ challenge_name }}"
+    state: directory
+    owner: "{{ flag_user }}"
+    group: "{{ ctf_group }}"
+    mode: 0750
+
+- name: Create flag file
+  copy:
+    src: flag.txt
+    dest: "{{ flag_path }}"
+    owner: "{{ flag_user }}"
+    group: "{{ flag_user }}"
+    mode: 0600
+
+- name: Testing for glibc 2.27
+  stat:
+    path: /opt/libc6-2.27/lib/i386-linux-gnu/ld-2.27.so
+  register: libc
+
+- name: Download glibc
+  get_url:
+    url: http://mirrors.kernel.org/ubuntu/pool/main/g/glibc/libc6_2.27-3ubuntu1_i386.deb
+    dest: /tmp/libc6_2.27-3ubuntu1_i386.deb
+  when: not libc.stat.exists
+
+- name: Extract glibc
+  command: dpkg -x /tmp/libc6_2.27-3ubuntu1_i386.deb /opt/libc6-2.27
+  args:
+    creates: /opt/libc6-2.27/lib/i386-linux-gnu/ld-2.27.so
+  when: not libc.stat.exists
+  become: true
+
+- name: Delete glibc deb
+  file:
+    state: absent
+    path: /tmp/libc6_2.27-3ubuntu1_i386.deb
+  when: not libc.stat.exists
+
+- name: Copy challenge source
+  template:
+    src: challenge.c.j2
+    dest: "{{ challenge_root }}/{{ challenge_name }}.c"
+    owner: "{{ flag_user }}"
+    group: "{{ ctf_group }}"  
+    mode: 0640
+
+- name: Build challenge
+  shell: |
+    gcc "{{ challenge_name }}.c" -o "{{ challenge_name }}" -ggdb3 -m32 -D_FORTIFY_SOURCE=2 -fstack-protector-all -fno-pic -no-pie -Wl,-z,relro,-z,lazy,-z,noexecstack -Wl,--dynamic-linker=/opt/libc6-2.27/lib/i386-linux-gnu/ld-2.27.so,--rpath=/opt/libc6-2.27/lib/i386-linux-gnu
+    chown "{{ flag_user }}":"{{ ctf_group }}" "{{ challenge_name }}"
+    chmod 4750 "{{ challenge_name }}"
+  args:
+    chdir: "{{ challenge_root }}"

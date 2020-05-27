@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+
+unsigned char *stack;
+unsigned int cnt;
+
+#define STACK_BYTES 512
+#define printstack(local)                                                      \
+  do {                                                                         \
+    stack = (unsigned char *)&local;                                           \
+    for (cnt = 0; cnt < STACK_BYTES; cnt++) {                                  \
+      if (!(cnt % 16))                                                         \
+        printf("\n%08x: ", cnt);                                               \
+      printf("%02x ", stack[cnt]);                                             \
+    }                                                                          \
+    printf("\n");                                                              \
+    fflush(stdout);                                                            \
+  } while (0);
+
+#define FLAG "{{ flag_path }}"
+
+void read_flag(void)
+{
+        int fd = -1;
+        char buf[512] = {0};
+
+        fd = open(FLAG, O_RDONLY);
+        if(fd == -1) {
+          perror("open");
+          exit(1);
+        }
+
+        read(fd, &buf, sizeof(buf)-1);
+        printf("%s\n", buf);
+        close(fd);
+        exit(0);
+}
+
+void clear_memory(char **m) {
+  char **p, *c;
+  for (p = m; *p != NULL; p++) {
+    c = *p;
+    while (*c)
+      *c++ = '\0';
+  }
+  return;
+}
+
+int main(int argc, char **argv, char **envp) {
+  char buffer[1024] = {0};
+  void (*fp)();
+
+  clear_memory(argv);
+  clear_memory(envp);
+
+  if (argc < 0)
+    fp = read_flag;
+
+#ifdef _DEBUG
+  printstack(fp);
+  printf("fp=%p\n", fp);
+#endif
+
+  fp();
+
+  return 0;
+}
