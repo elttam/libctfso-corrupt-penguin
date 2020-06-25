@@ -1,6 +1,6 @@
 Vagrant.require_version ">= 1.7.0"
 
-vmname = "libctf.so disparate penguin"
+vmname = "libctf.so corrupt penguin"
 
 Vagrant.configure(2) do |config|
   config.vm.box = "generic/ubuntu1604"
