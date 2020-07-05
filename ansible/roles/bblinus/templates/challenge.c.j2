@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
   if (argc <= 1) {
     fprintf(stderr, "%s <message>\n",
-            argv[0] == NULL ? argv[0] : "./challenge");
+            argv[0] == NULL ? "./challenge" : argv[0]);
     return EXIT_FAILURE;
   }
 
